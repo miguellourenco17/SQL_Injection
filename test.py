@@ -1,23 +1,20 @@
-import sqlite3
+# vulnerable_mysql.py
+import MySQLdb
+import sys
 
-def vulnerable_login(username, password):
-    conn = sqlite3.connect(":memory:")
-    cur = conn.cursor()
-    cur.execute("CREATE TABLE users (id INTEGER, username TEXT, password TEXT)")
-    cur.execute("INSERT INTO users VALUES (1, 'admin', 'admin123')")
-    conn.commit()
-
-    # ❌ VULNERABLE: user input directly injected into the SQL string
-    query = "SELECT * FROM users WHERE username = '" + username + "' AND password = '" + password + "'"
-    print("Executing:", query)
-    cur.execute(query)   # SQL injection risk
-    return cur.fetchall()
-
+def vulnerable_query(user_input):
+    db = MySQLdb.connect(host="localhost", user="root", passwd="root", db="testdb")
+    cursor = db.cursor()
+    
+    # ❌ Noncompliant: SQL Injection
+    query = "SELECT * FROM users WHERE id = " + user_input
+    cursor.execute(query)  # SonarQube should flag this
+    for row in cursor.fetchall():
+        print(row)
 
 if __name__ == "__main__":
-    # attacker could input: admin' -- 
-    uname = input("Enter username: ")
-    pwd = input("Enter password: ")
+    if len(sys.argv) < 2:
+        print("Usage: python vulnerable_mysql.py <id>")
+        sys.exit(1)
 
-    rows = vulnerable_login(uname, pwd)
-    print("Results:", rows)
+    vulnerable_query(sys.argv[1])  # tainted input
