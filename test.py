@@ -25,3 +25,12 @@ if __name__ == "__main__":
     u, p = get_user_input()
     rows = vulnerable_login(conn, u, p)
     print("Result rows:", rows)
+
+def safe_login(conn, username, password):
+    # ✅ Compliant: parameterized query
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT * FROM users WHERE username = ? AND password = ?",
+        (username, password)
+    )
+    return cur.fetchall()
