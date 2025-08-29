@@ -34,3 +34,32 @@ def safe_login(conn, username, password):
         (username, password)
     )
     return cur.fetchall()
+
+
+# vulnerable_sqli_sonar.py
+import sqlite3
+import sys
+
+def vulnerable_query(conn, user_id):
+    cursor = conn.cursor()
+    # ❌ Noncompliant: SQL injection via string concatenation
+    query = "SELECT * FROM users WHERE id = " + user_id
+    cursor.execute(query)  # SonarQube should flag this as a hotspot
+    return cursor.fetchall()
+
+if __name__ == "__main__":
+    # Setup in-memory DB
+    conn = sqlite3.connect(":memory:")
+    c = conn.cursor()
+    c.execute("CREATE TABLE users (id INTEGER PRIMARY KEY, username TEXT)")
+    c.execute("INSERT INTO users (username) VALUES ('alice')")
+    c.execute("INSERT INTO users (username) VALUES ('bob')")
+    conn.commit()
+
+    if len(sys.argv) < 2:
+        print("Usage: python vulnerable_sqli_sonar.py <user_id>")
+        sys.exit(1)
+
+    user_id = sys.argv[1]   # tainted source
+    results = vulnerable_query(conn, user_id)
+    print("Query results:", results)
